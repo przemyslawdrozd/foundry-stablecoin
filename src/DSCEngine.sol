@@ -3,15 +3,57 @@ pragma solidity 0.8.20;
 
 import {ERC20Burnable, ERC20} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
 
 /**
  * @title DSCEngine
  * @author Przemo
  */
 contract DSCEngine {
+    error DCSEngine__NeedsMoreThanZero();
+    error DCSEngine__TokenAddressAndPriceAddressMustBeSameLength();
+
+    mapping(address token => address priceFeed) private s_priceFeeds;
+
+    DecentralizedStableCoin private immutable i_dsc;
+
+    modifier moreThanZero(uint256 amount) {
+        if (amount == 0) {
+            revert DCSEngine__NeedsMoreThanZero();
+        }
+        _;
+    }
+
+    // modifier isAllowedToken(address token) {
+
+    // }
+
+    constructor(
+        address[] memory tokenAddresses,
+        address[] memory priceFeedAddress,
+        address dscAddress
+    ) {
+        if (tokenAddresses.length != priceFeedAddress.length) {
+            revert DCSEngine__TokenAddressAndPriceAddressMustBeSameLength();
+        }
+
+        for (uint256 i = 0; i < tokenAddresses.length; i++) {
+            s_priceFeeds[tokenAddresses[i]] = priceFeedAddress[i];
+        }
+
+        i_dsc = DecentralizedStableCoin(dscAddress);
+    }
+
     function depositeCollateralAndMintDsc() external {}
 
-    function redeemCollateralForDsc() external {}
+    /**
+     * @param tokenCollateralAddress The address of the token to deposit as collateral
+     * @param amountCollateral the amount of collateral to deposit
+     */
+    function redeemCollateralForDsc(
+        address tokenCollateralAddress,
+        uint256 amountCollateral
+    ) external moreThanZero(amountCollateral) {}
 
     function redeemCollateral() external {}
 
