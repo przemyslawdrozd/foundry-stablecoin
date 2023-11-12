@@ -4,14 +4,16 @@ pragma solidity 0.8.20;
 import {ERC20Burnable, ERC20} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {DecentralizedStableCoin} from "./DecentralizedStableCoin.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title DSCEngine
  * @author Przemo
  */
-contract DSCEngine {
+contract DSCEngine is ReentrancyGuard {
     error DCSEngine__NeedsMoreThanZero();
     error DCSEngine__TokenAddressAndPriceAddressMustBeSameLength();
+    error DCSEngine__NotAllowedToken();
 
     mapping(address token => address priceFeed) private s_priceFeeds;
 
@@ -24,9 +26,12 @@ contract DSCEngine {
         _;
     }
 
-    // modifier isAllowedToken(address token) {
-
-    // }
+    modifier isAllowedToken(address token) {
+        if (s_priceFeeds[token] == address(0)) {
+            revert DCSEngine__NotAllowedToken();
+        }
+        _;
+    }
 
     constructor(
         address[] memory tokenAddresses,
@@ -53,7 +58,12 @@ contract DSCEngine {
     function redeemCollateralForDsc(
         address tokenCollateralAddress,
         uint256 amountCollateral
-    ) external moreThanZero(amountCollateral) {}
+    )
+        external
+        moreThanZero(amountCollateral)
+        isAllowedToken(tokenCollateralAddress)
+        nonReentrant
+    {}
 
     function redeemCollateral() external {}
 
