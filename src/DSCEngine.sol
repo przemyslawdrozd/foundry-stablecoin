@@ -18,12 +18,14 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__BreaksHealthFactor(uint256 userHealthFactor);
     error DSCEngine__MintFailed();
     error DSCEngine__HealthFactorOk();
+    error DSCEngine__HealthFactorNotImproved();
 
     uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
     uint256 private constant PRECISION = 1e18;
     uint256 private constant LIQUIDATION_THRESHOLD = 50; // 200% overcollateral
     uint256 private constant LIQUIDATION_PRECISION = 100;
     uint256 private constant MIN_HEALTH_FACTOR = 1e18;
+    uint256 private constant LIQUIDATION_BONUS = 10; // 10%
 
     mapping(address token => address priceFeed) private s_priceFeeds;
     mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited;
@@ -137,25 +139,21 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     function burnDsc(uint256 amount) public moreThanZero(amount) {
-        s_DSCMinted[msg.sender] -= amount;
-        bool success = i_dsc.transferFrom(msg.sender, address(this), amount);
-        if (!success) {
-            revert DSCEngine__TransferFailed();
-        }
-        i_dsc.burn(amount);
-
+        _burnDsc(amount, msg.sender, msg.sender);
         // I don't think this would ever be broken
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     /**
      * @param collateral The ERC20 collateral address to liquidate from the user
-     * @param user The user who has nroken the health factor. Their _helthFactor should be below MIN_HEALTH_FACTOR
+     * @param user The user who has broken the health factor. Their _helthFactor should be above MIN_HEALTH_FACTOR
      * @param debtToCover The amount of DSC you want to burn to improve the users health factor
+     *
      * @notice You can partially liquidate a user.
      * @notice You will get a liquidation bonus for taking the users funds
      * @notice This func working assumes the protocol will be roughly 200% overcollateralized in order for this to work
      * @notice A known bug would be if the protocol were 100% or less collateralized, then we wouldn't be able to incentive the liquidators.
+     *
      * For example, if the price of the collateral plummeted before anyone could be liquidate
      * Followes: CEI: Checks. Effects, Interactions
      */
@@ -184,6 +182,14 @@ contract DSCEngine is ReentrancyGuard {
         _redeemCollateral(collateral, totalCollateralToReedem, user, msg.sender);
 
         // We want to burn DSC
+        _burnDsc(debtToCover, user, msg.sender);
+
+        uint256 endingUserHealthFactor = _healthFactor(user);
+
+        if (endingUserHealthFactor <= startingUserHealthFactor) {
+            revert DSCEngine__HealthFactorNotImproved();
+        }
+        _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     function getHelthFactor() external view {}
