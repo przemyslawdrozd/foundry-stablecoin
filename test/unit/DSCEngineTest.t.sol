@@ -70,4 +70,14 @@ contract DSCEngineTest is Test {
         dsce.depositCollateral(weth, 0);
         vm.stopPrank();
     }
+
+    // Expect to revert because given token is not exist as collateral
+    function testRevertUnappprovedCollateral() public {
+        ERC20Mock ranToken = new ERC20Mock("RAN", "RAN", USER, AMOUNT_COLLATERAL);
+        vm.startPrank(USER);
+
+        vm.expectRevert(DSCEngine.DCSEngine__NotAllowedToken.selector);
+        dsce.depositCollateral(address(ranToken), AMOUNT_COLLATERAL);
+        vm.stopPrank();
+    }
 }
