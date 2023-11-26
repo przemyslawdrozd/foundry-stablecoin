@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {DeployDSC} from "../../script/DeployDSC.s.sol";
 import {DecentralizedStableCoin} from "../../src/DecentralizedStableCoin.sol";
 import {DSCEngine} from "../../src/DSCEngine.sol";
@@ -45,6 +45,15 @@ contract DSCEngineTest is Test {
 
         vm.expectRevert(DSCEngine.DCSEngine__TokenAddressAndPriceAddressMustBeSameLength.selector);
         new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+    }
+
+    function testGetTokenAmountFromUsd() public {
+        uint256 usdAmount = 100 ether;
+        uint256 expectedWeth = 0.05 ether;
+
+        uint256 actualWeth = dsce.getTokenAmountFromUsd(weth, usdAmount);
+        console.log("actualWeth", actualWeth);
+        assertEq(expectedWeth, actualWeth);
     }
 
     function testGetUsdValue() public {
