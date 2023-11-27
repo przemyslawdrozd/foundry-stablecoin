@@ -115,4 +115,12 @@ contract DSCEngineTest is Test {
         dsce.depositCollateralAndMintDsc(weth, AMOUNT_COLLATERAL, amountToMint);
         vm.stopPrank();
     }
+
+    function testCanRedeemCollateral() public depositedCollateral {
+        vm.startPrank(USER);
+        dsce.redeemCollateral(weth, AMOUNT_COLLATERAL);
+        uint256 userBalance = ERC20Mock(weth).balanceOf(USER);
+        assertEq(userBalance, AMOUNT_COLLATERAL);
+        vm.stopPrank();
+    }
 }
