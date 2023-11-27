@@ -23,6 +23,7 @@ contract DSCEngineTest is Test {
     address public USER = makeAddr("user");
     uint256 public constant AMOUNT_COLLATERAL = 10 ether;
     uint256 public constant STARTING_ERC20_BALANCE = 10 ether;
+    uint256 public constant AMOUNT_TO_MINT = 100 ether;
 
     function setUp() public {
         deployer = new DeployDSC();
@@ -123,4 +124,18 @@ contract DSCEngineTest is Test {
         assertEq(userBalance, AMOUNT_COLLATERAL);
         vm.stopPrank();
     }
+
+    modifier depositedCollateralAndMintedDsc() {
+        vm.startPrank(USER);
+        ERC20Mock(weth).approve(address(dsce), AMOUNT_COLLATERAL);
+        dsce.depositCollateralAndMintDsc(weth, AMOUNT_COLLATERAL, AMOUNT_TO_MINT);
+        vm.stopPrank();
+        _;
+    }
+
+    function testCanMintWithDepositedCollateral() public depositedCollateralAndMintedDsc {
+        uint256 userBalance = dsc.balanceOf(USER);
+        assertEq(userBalance, AMOUNT_TO_MINT);
+    }
+
 }
