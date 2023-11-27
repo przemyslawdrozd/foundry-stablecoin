@@ -11,9 +11,9 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/Ag
  * @author Przemo
  */
 contract DSCEngine is ReentrancyGuard {
-    error DCSEngine__NeedsMoreThanZero();
-    error DCSEngine__TokenAddressAndPriceAddressMustBeSameLength();
-    error DCSEngine__NotAllowedToken();
+    error DSCEngine__NeedsMoreThanZero();
+    error DSCEngine__TokenAddressAndPriceAddressMustBeSameLength();
+    error DSCEngine__NotAllowedToken();
     error DSCEngine__TransferFailed();
     error DSCEngine__BreaksHealthFactor(uint256 userHealthFactor);
     error DSCEngine__MintFailed();
@@ -41,21 +41,21 @@ contract DSCEngine is ReentrancyGuard {
 
     modifier moreThanZero(uint256 amount) {
         if (amount == 0) {
-            revert DCSEngine__NeedsMoreThanZero();
+            revert DSCEngine__NeedsMoreThanZero();
         }
         _;
     }
 
     modifier isAllowedToken(address token) {
         if (s_priceFeeds[token] == address(0)) {
-            revert DCSEngine__NotAllowedToken();
+            revert DSCEngine__NotAllowedToken();
         }
         _;
     }
 
     constructor(address[] memory tokenAddresses, address[] memory priceFeedAddress, address dscAddress) {
         if (tokenAddresses.length != priceFeedAddress.length) {
-            revert DCSEngine__TokenAddressAndPriceAddressMustBeSameLength();
+            revert DSCEngine__TokenAddressAndPriceAddressMustBeSameLength();
         }
 
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
